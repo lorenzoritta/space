@@ -16,7 +16,7 @@ $(function () {
         y: paddle.height - 10,
         l: 20,
         a: 20,
-        color:"red",
+        color: "red",
     };
 
     var gameover = false;
@@ -25,6 +25,7 @@ $(function () {
     // Estados das teclas
     var leftPressed = false;
     var rightPressed = false;
+    var spacePressed = false;
 
     var brickRowCount = 4;
     var brickColumnCount = 7;
@@ -35,6 +36,8 @@ $(function () {
     var brickOffsetLeft = 35;
 
     var bricks = [];
+
+    var tiros = [];
 
     for (var c = 0; c < brickColumnCount; c++) {
         bricks[c] = [];
@@ -52,12 +55,22 @@ $(function () {
         ctx.fillRect(paddle.x, paddle.y, paddle.l, paddle.a);
     }
 
-    function drawSquare(){
+    function drawSquare() {
         ctx.fillStyle = square.color;
-        ctx. fillRect(square.x, square.y, square.l, square.a);
+        ctx.fillRect(square.x, square.y, square.l, square.a);
     }
 
-    
+    function tiro(x, y, a, l) {
+        return {
+            "x": x,
+            "y": y,
+            "a": a,
+            "l": l,
+            cor: "pink",
+        }
+    }
+
+
 
     function drawBricks() {
         for (var c = 0; c < brickColumnCount; c++) {
@@ -79,17 +92,51 @@ $(function () {
         ctx.font = "18px Arial";
         ctx.fillText("Pontos: " + score, 10, 20);
     }
+    
+    function drawtiro(){
+        for (let i = 0; i < tiros.length; i++) {
+            ctx.fillStyle = tiros[i].cor;
+            ctx.fillRect(tiros[i].x, tiros[i].y, tiros[i].l, tiros[i].a);
+            
+        }
+    }
 
-    function atualizarBall() {
-        // Colisão com tijolos
+    function atualizartiro() {
+        for (var i = 0; i < tiros.length; i++) {
+            tiros[i].y = tiros[i].y - 1;
+        }
+    }
+
+    function detectacolicao() {
         for (var c = 0; c < brickColumnCount; c++) {
             for (var r = 0; r < brickRowCount; r++) {
-                var b = bricks[c][r];
-                if (!b.destroyed) {
-                    var bx = b.x;
-                    var by = b.y;
-                    var bw = brickWidth;
-                    var bh = brickHeight;
+                var bloco = bricks[c][r];
+    
+                if (!bloco.destroyed) {
+                    for (var j = 0; j < tiros.length; j++) {
+                        var tiroAtual = tiros[j];
+    
+                        if (
+                            tiroAtual.x < bloco.x + brickWidth &&
+                            tiroAtual.x + tiroAtual.l > bloco.x &&
+                            tiroAtual.y < bloco.y + brickHeight &&
+                            tiroAtual.y + tiroAtual.a > bloco.y
+                        ) {
+                            // Colisão detectada!
+                            bloco.destroyed = true;
+    
+                            // Remover o tiro da lista
+                            tiros.splice(j, 1);
+                            j--;
+    
+                            // Incrementar pontuação
+                            score += 10;
+    
+                            // Opcional: som de efeito ou animação
+    
+                            break; // Evita múltiplas colisões com o mesmo tiro
+                        }
+                    }
                 }
             }
         }
@@ -104,11 +151,14 @@ $(function () {
         drawPaddle();
         drawScore();
         drawSquare();
+        atualizartiro();
+        detectacolicao();
+        drawtiro();
         //if (ball.y + ball.size > canvas.height) {
-          //  gameover = true;
+        //  gameover = true;
         //}
-        
-        
+
+
 
         if (!gameover) {
 
@@ -141,5 +191,17 @@ $(function () {
     $(window).keyup(function (event) {
         if (event.which === 37) leftPressed = false;
         if (event.which === 39) rightPressed = false;
+    });
+
+    $(window).keydown(function (event) {
+        if (event.which === 32){
+            spacePressed = true;
+        var centro = paddle.x + (paddle.l / 2);
+        tiros.push(tiro(centro, paddle.y, 5 , 5));
+        }
+    });
+
+    $(window).keyup(function (event) {
+        if (event.which === 32) spacePressed = false;
     });
 });
